@@ -1,0 +1,38 @@
+#! /usr/bin/env python
+#takes a dumped xyz file from lammps and converts it to have the correct atom symbols instead of numbers
+
+import subprocess
+from collections import defaultdict
+
+#read lines from the trajectory file, open output file
+getFilename = subprocess.Popen('ls trajectory*', stdout=subprocess.PIPE, shell=True)
+filename = getFilename.communicate()[0].rstrip()
+getTotalAtoms = subprocess.Popen('head -n 1 trajectory*', stdout=subprocess.PIPE, shell=True)
+totalAtoms = int(getTotalAtoms.communicate()[0].rstrip())
+infile = open(filename, 'r')
+lines = infile.readlines()
+#determine the number of atom types in the molecule. Then, get that number of lines + 1 after the pair coefficients line, discarding the first, which will have the hash.
+getNumAtoms = subprocess.Popen('grep "atom types" data*', stdout=subprocess.PIPE, shell=True)
+numAtoms = int(getNumAtoms.communicate()[0][1])
+getAtomTypes = subprocess.Popen('grep -A {0} "Pair Coeffs" data*'.format(numAtoms+1), stdout=subprocess.PIPE, shell=True)
+atomLines = getAtomTypes.communicate()[0].splitlines()
+d = defaultdict(list)
+for j, line in enumerate(atomLines):
+    if j == 0 or j == 1:
+        trash = line
+    else:
+        k = j-1
+        d[k].append(line.rsplit(' ',1)[1])
+
+outfile = open('tempFile.xyz', 'w')
+
+for m, line in enumerate(lines):
+    if str(totalAtoms) in line:
+        outfile.write('{0}'.format(line))
+    elif 'Atoms.' in line:
+        outfile.write('{0}'.format(line))
+    else:
+        outfile.write('{0} {1}'.format(d.get(int(line.split(' ',1)[0]))[0],line.split(' ',1)[1]))
+infile.close()
+outfile.close()
+subprocess.Popen('mv tempFile.xyz {0}'.format(filename), shell=True)
