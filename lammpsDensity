@@ -7,10 +7,13 @@ import matplotlib.pyplot as plt
 #open data file, read lines, create start and stop flags, and make data arrays
 screenFile = open('screen.0','r')
 lines = screenFile.readlines()
+screenFile.close()
 startFlag = False
 stopFlag = False
 timestep = []
+aTimestep = []
 density = []
+avg = []
 for line in lines:
     if "Step Temp Press" in line:
         startFlag = True
@@ -19,12 +22,16 @@ for line in lines:
     elif startFlag == True and stopFlag == False:
         timestep.append(int(line.lstrip().split()[0])/2)
         density.append(float(line.lstrip().split()[4])*1000)
+        if timestep[-1] > 50000:
+            avg.append(sum(density[-4000:])/4000)
+            aTimestep.append(timestep[-1])
     elif startFlag == True and stopFlag == True:
         trash =line
 
-
-plt.plot(timestep,density,color='k')
+plt.plot(timestep,density,color='g')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
+plt.plot(aTimestep,avg,color='b')
+plt.legend(['Raw','Running average'], loc=4, frameon=False)
 plt.show()
 
