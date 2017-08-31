@@ -28,7 +28,7 @@ for line in lines:
     elif startFlag == True and stopFlag == True:
         trash =line
 
-plt.plot(timestep,density,color='g')
+plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
 plt.plot(aTimestep,avg,color='b')
