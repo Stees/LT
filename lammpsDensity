@@ -32,6 +32,6 @@ plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
 plt.plot(aTimestep,avg,color='b')
-plt.legend(['Raw','Running average'], loc=4, frameon=False)
+plt.legend(['Raw','Running average'], loc=7, frameon=False)
 plt.show()
 
