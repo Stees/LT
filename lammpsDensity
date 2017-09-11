@@ -17,6 +17,8 @@ avg = []
 for line in lines:
     if "Step Temp Press" in line:
         startFlag = True
+    elif "Loop time of " in line:
+        stopFlag = True
     elif startFlag == False and stopFlag == False:
         trash = line
     elif startFlag == True and stopFlag == False:
