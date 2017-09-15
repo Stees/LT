@@ -24,7 +24,7 @@ for line in lines:
     elif startFlag == True and stopFlag == False:
         timestep.append(int(line.lstrip().split()[0])/2)
         density.append(float(line.lstrip().split()[4])*1000)
-        if timestep[-1] > =100000:
+        if timestep[-1] > 100000:
             avg.append(sum(density[-4000:])/4000)
             aTimestep.append(timestep[-1])
     elif startFlag == True and stopFlag == True:
