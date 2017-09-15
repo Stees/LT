@@ -24,16 +24,22 @@ for line in lines:
     elif startFlag == True and stopFlag == False:
         timestep.append(int(line.lstrip().split()[0])/2)
         density.append(float(line.lstrip().split()[4])*1000)
-        if timestep[-1] > 50000:
+        if timestep[-1] > =100000:
             avg.append(sum(density[-4000:])/4000)
             aTimestep.append(timestep[-1])
     elif startFlag == True and stopFlag == True:
-        trash =line
+        trash = line
+    else:
+        print('Error has occured.\n')
+desLine = []
+for b in timestep:
+    desLine.append(1150.7)
 
 plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
 plt.plot(aTimestep,avg,color='b')
-plt.legend(['Raw','Running average'], loc=7, frameon=False)
+plt.plot(timestep,desLine,color='c')
+plt.legend(['Raw','Running average','Experimental'], loc=4, frameon=False)
 plt.show()
 
