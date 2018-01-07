@@ -34,7 +34,7 @@ for line in lines:
 desLine = []
 for b in timestep:
     desLine.append(1150.7)
-print('Average density {0} kg/m^3\n'.format(avg[-1]))
+print('Average density {0} kg/m^3\n'.format(density[-1]))
 plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
