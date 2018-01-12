@@ -35,4 +35,5 @@ for m, line in enumerate(lines):
         outfile.write('{0} {1}'.format(d.get(int(line.split(' ',1)[0]))[0],line.split(' ',1)[1]))
 infile.close()
 outfile.close()
+subprocess.Popen('rm trajector*', shell=True)
 subprocess.Popen('mv tempFile.xyz {0}'.format(filename), shell=True)

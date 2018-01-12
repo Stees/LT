@@ -13,6 +13,11 @@ stopFlag = False
 timestep = []
 aTimestep = []
 density = []
+vdw = []
+coulomb = []
+stretch = []
+bend = []
+torsion = []
 avg = []
 for line in lines:
     if "Step Temp Press" in line:
@@ -23,6 +28,11 @@ for line in lines:
         trash = line
     elif startFlag == True and stopFlag == False:
         timestep.append(int(line.lstrip().split()[0])/2)
+        vdw.append(float(line.lstrip().split()[5]))
+        coulomb.append(float(line.lstrip().split()[6])+float(line.lstrip().split()[7]))
+        stretch.append(float(line.lstrip().split()[9]))
+        bend.append(float(line.lstrip().split()[10]))
+        torsion.append(float(line.lstrip().split()[11]))
         density.append(float(line.lstrip().split()[4])*1000)
         if timestep[-1] > 100000:
             avg.append(sum(density[-4000:])/4000)
@@ -34,7 +44,12 @@ for line in lines:
 desLine = []
 for b in timestep:
     desLine.append(1150.7)
-print('Average density {0} kg/m^3\n'.format(avg[-1]))
+print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
+print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
+print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
+print('Average stretch:\t{0:.2f} kcal/mol\n'.format(sum(stretch[-5000:])/5000))
+print('Average bend:\t\t{0:.2f} kcal/mol\n'.format(sum(bend[-5000:])/5000))
+print('Average torsion:\t{0:.2f} kcal/mol\n'.format(sum(torsion[-5000:])/5000))
 plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
