@@ -19,6 +19,10 @@ stretch = []
 bend = []
 torsion = []
 avg = []
+#get timestep from in.lammps
+getTimestep = subprocess.Popen('grep -m 1 "timestep" in.lammps\n', stdout=subprocess.PIPE, shell=True)
+gotTimestep = float(getTimestep.communicate()[0].split()[1])
+#process data file, extracting following predefined thermo_style 
 for line in lines:
     if "Step Temp Press" in line:
         startFlag = True
@@ -26,8 +30,8 @@ for line in lines:
         stopFlag = True
     elif startFlag == False and stopFlag == False:
         trash = line
-    elif startFlag == True and stopFlag == False:
-        timestep.append(int(line.lstrip().split()[0])/2)
+    elif startFlag == True and stopFlag == False and line != lines[-1]:
+        timestep.append(int(line.lstrip().split()[0])*gotTimestep)
         vdw.append(float(line.lstrip().split()[5]))
         coulomb.append(float(line.lstrip().split()[6])+float(line.lstrip().split()[7]))
         stretch.append(float(line.lstrip().split()[9]))
@@ -40,10 +44,24 @@ for line in lines:
     elif startFlag == True and stopFlag == True:
         trash = line
     else:
-        print('Error has occured.\n')
+        print('Simulation is not finished or an error has occured.\n')
+#get the experimental density
+controlFlag = 0
+while controlFlag == 0:
+    rawExperimentalDensity = raw_input('What is the expected density in kg/m^3?\n')
+    try:
+        if isinstance(float(rawExperimentalDensity), float):
+            experimentalDensity = float(rawExperimentalDensity.replace(" ",""))
+            controlFlag = 1
+        else:
+            print('\nInvalid entry. Try again.\n')
+    except:
+        print('\nInvalid entry. Try again.\n')
+#plot the experimental density
 desLine = []
 for b in timestep:
-    desLine.append(1150.7)
+    desLine.append(experimentalDensity)
+#print calculated averages
 print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
 print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
 print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
