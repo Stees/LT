@@ -38,7 +38,7 @@ for line in lines:
         bend.append(float(line.lstrip().split()[10]))
         torsion.append(float(line.lstrip().split()[11]))
         density.append(float(line.lstrip().split()[4])*1000)
-        if timestep[-1] > 100000:
+        if timestep[-1] > 100000*gotTimestep:
             avg.append(sum(density[-4000:])/4000)
             aTimestep.append(timestep[-1])
     elif startFlag == True and stopFlag == True:
