@@ -62,7 +62,10 @@ desLine = []
 for b in timestep:
     desLine.append(experimentalDensity)
 #print calculated averages
-print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
+try:
+    print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
+except:
+    print('No average density yet.\n')
 print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
 print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
 print('Average stretch:\t{0:.2f} kcal/mol\n'.format(sum(stretch[-5000:])/5000))
