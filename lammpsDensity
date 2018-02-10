@@ -1,8 +1,10 @@
 #! /usr/bin/env python
-#extracts the densities of the material from a lammps screen file and plots data
+#assists user in determining block average properties resulting from a simulation by first helping the user determine the correct number of blocks to use. 
 
 import subprocess
 import matplotlib.pyplot as plt
+#enables interactive mode, will allow for continued program execution while plots are still displayed
+#plt.ion()
 
 #open data file, read lines, create start and stop flags, and make data arrays
 screenFile = open('screen.0','r')
@@ -10,6 +12,7 @@ lines = screenFile.readlines()
 screenFile.close()
 startFlag = False
 stopFlag = False
+blocksToTest = range(5,26)
 timestep = []
 aTimestep = []
 density = []
@@ -38,9 +41,9 @@ for line in lines:
         bend.append(float(line.lstrip().split()[10]))
         torsion.append(float(line.lstrip().split()[11]))
         density.append(float(line.lstrip().split()[4])*1000)
-        if timestep[-1] > 100000*gotTimestep:
-            avg.append(sum(density[-4000:])/4000)
-            aTimestep.append(timestep[-1])
+        # if timestep[-1] > 100000*gotTimestep:
+        #     avg.append(sum(density[-4000:])/4000)
+        #     aTimestep.append(timestep[-1])
     elif startFlag == True and stopFlag == True:
         trash = line
     else:
@@ -62,20 +65,36 @@ desLine = []
 for b in timestep:
     desLine.append(experimentalDensity)
 #print calculated averages
-try:
-    print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
-except:
-    print('No average density yet.\n')
-print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
-print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
-print('Average stretch:\t{0:.2f} kcal/mol\n'.format(sum(stretch[-5000:])/5000))
-print('Average bend:\t\t{0:.2f} kcal/mol\n'.format(sum(bend[-5000:])/5000))
-print('Average torsion:\t{0:.2f} kcal/mol\n'.format(sum(torsion[-5000:])/5000))
+# try:
+#     print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
+# except:
+#     print('No average density yet.\n')
+# print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
+# print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
+# print('Average stretch:\t{0:.2f} kcal/mol\n'.format(sum(stretch[-5000:])/5000))
+# print('Average bend:\t\t{0:.2f} kcal/mol\n'.format(sum(bend[-5000:])/5000))
+# print('Average torsion:\t{0:.2f} kcal/mol\n'.format(sum(torsion[-5000:])/5000))
 plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
-plt.plot(aTimestep,avg,color='b')
+#plt.plot(aTimestep,avg,color='b')
 plt.plot(timestep,desLine,color='c')
-plt.legend(['Raw','Running average','Experimental'], loc=4, frameon=False)
-plt.show()
+#plt.legend(['Raw','Running average','Experimental'], loc=4, frameon=False)
+plt.legend(['Raw','Experimental'], loc=4, frameon=False)
+plt.draw()
+plt.show(block=False)
+#get the timestep value where user believes equilibration should start
+controlFlag = 0
+while controlFlag == 0:
+    rawEquilibrationStart = raw_input('Enter the time at which the equilbiration region begins in fs.\n')
+    try:
+        if isinstance(int(rawEquilibrationStart), int):
+            #The following line does not give the desired line, it gives the timestep corresponding to the desired line
+            equilibrationStart = int(rawEquilibrationStart.replace(" ","")/gotTimestep)
+            controlFlag = 1
+        else:
+            print('Invalid entry. Try again.\n')
+    except:
+        print('Error in equilibration region start input.\n')
+
 
