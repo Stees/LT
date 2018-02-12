@@ -216,3 +216,5 @@ outputFile.write('Electrostatic:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format
 outputFile.write('Stretch:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockStretchMean[blockIndex],blockStretchStd[blockIndex]))
 outputFile.write('Bend:\t\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockBendMean[blockIndex],blockBendStd[blockIndex]))
 outputFile.write('Torsion:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockTorsionMean[blockIndex],blockTorsionStd[blockIndex]))
+outputFile.close()
+
