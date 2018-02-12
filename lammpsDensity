@@ -3,6 +3,7 @@
 
 import subprocess
 import matplotlib.pyplot as plt
+import math as m
 #enables interactive mode, will allow for continued program execution while plots are still displayed
 #plt.ion()
 
@@ -12,7 +13,23 @@ lines = screenFile.readlines()
 screenFile.close()
 startFlag = False
 stopFlag = False
-blocksToTest = range(5,26)
+lineNumber = 0
+printEveryList = []
+blocksToConsider = range(2,10000)
+blocksToTest = []
+blockSize = []
+blockDensityMean = []
+blockVdwMean = []
+blockCoulombMean = []
+blockStretchMean = []
+blockBendMean = []
+blockTorsionMean = []
+blockDensityStd = []
+blockVdwStd = []
+blockCoulombStd = []
+blockStretchStd = []
+blockBendStd = []
+blockTorsionStd = []
 timestep = []
 aTimestep = []
 density = []
@@ -22,18 +39,23 @@ stretch = []
 bend = []
 torsion = []
 avg = []
-#get timestep from in.lammps
-getTimestep = subprocess.Popen('grep -m 1 "timestep" in.lammps\n', stdout=subprocess.PIPE, shell=True)
-gotTimestep = float(getTimestep.communicate()[0].split()[1])
-#process data file, extracting following predefined thermo_style 
+#get timestep from screen.0 output file. This line may need to be changed based on lammps configuration: where the output is written.
+getTimestep = subprocess.Popen('grep -m 1 "Time step" screen.0\n', stdout=subprocess.PIPE, shell=True)
+gotTimestep = float(getTimestep.communicate()[0].split()[-1])
+#UPDATE TO AUTOMATICALLY GET THIS DATA REGARDLESS OF THERMO DATA STYLE #process data file, extracting following predefined thermo_style:
 for line in lines:
     if "Step Temp Press" in line:
         startFlag = True
     elif "Loop time of " in line:
         stopFlag = True
+        lineNumber = lineNumber - 1
     elif startFlag == False and stopFlag == False:
         trash = line
     elif startFlag == True and stopFlag == False and line != lines[-1]:
+        if lineNumber <= 1:
+            printEveryList.append(int(line.lstrip().split()[0]))
+        elif lineNumber == 2:
+            printEvery = printEveryList[1] - printEveryList[0]
         timestep.append(int(line.lstrip().split()[0])*gotTimestep)
         vdw.append(float(line.lstrip().split()[5]))
         coulomb.append(float(line.lstrip().split()[6])+float(line.lstrip().split()[7]))
@@ -44,14 +66,16 @@ for line in lines:
         # if timestep[-1] > 100000*gotTimestep:
         #     avg.append(sum(density[-4000:])/4000)
         #     aTimestep.append(timestep[-1])
+        lineNumber = lineNumber + 1
     elif startFlag == True and stopFlag == True:
         trash = line
+        
     else:
         print('Simulation is not finished or an error has occured.\n')
 #get the experimental density
 controlFlag = 0
-while controlFlag == 0:
-    rawExperimentalDensity = raw_input('What is the expected density in kg/m^3?\n')
+while controlFlag != 1:
+    rawExperimentalDensity = raw_input('\nWhat is the expected density in kg/m^3?\n')
     try:
         if isinstance(float(rawExperimentalDensity), float):
             experimentalDensity = float(rawExperimentalDensity.replace(" ",""))
@@ -85,16 +109,110 @@ plt.draw()
 plt.show(block=False)
 #get the timestep value where user believes equilibration should start
 controlFlag = 0
-while controlFlag == 0:
-    rawEquilibrationStart = raw_input('Enter the time at which the equilbiration region begins in fs.\n')
+while controlFlag != 1:
+    rawEquilibrationStart = raw_input('\nEnter the time at which the equilbiration region begins in fs.\n')
     try:
         if isinstance(int(rawEquilibrationStart), int):
-            #The following line does not give the desired line, it gives the timestep corresponding to the desired line
-            equilibrationStart = int(rawEquilibrationStart.replace(" ","")/gotTimestep)
+            equilibrationStart = int(int(rawEquilibrationStart.replace(" ",""))/gotTimestep/printEvery)
             controlFlag = 1
         else:
             print('Invalid entry. Try again.\n')
     except:
         print('Error in equilibration region start input.\n')
+#number of steps in equilibration range
+equilibrationLines = lineNumber - equilibrationStart
+#print('{0}'.format(equilibrationLines))
+for value in blocksToConsider:
+    if equilibrationLines%value == 0:
+        blocksToTest.append(value)
+for value in blocksToTest:
+    linesPerBlock = int(equilibrationLines/value)
+    #make the start and stop point arrays
+    startPoints = range(equilibrationStart,lineNumber,linesPerBlock)
+    tempPoints = startPoints[1:]
+    stopPoints = [x-1 for x in startPoints[1:]]+[lineNumber]
+    #print('{0}'.format(lineNumber))
+    #print('{0}\n{1}\n{2}\n'.format(startPoints,tempPoints,stopPoints))
+    #calculate mean properties for each block. Mean density will be used to determine appropriate number of blocks
+    tempDensity = []
+    tempVdw = []
+    tempCoulomb = []
+    tempStretch = []
+    tempBend = []
+    tempTorsion = []
+    tempA = []
+    tempB = []
+    tempC = []
+    tempD = []
+    tempE = []
+    tempF = []
+    for x in range(0,len(startPoints)):
+        tempDensity.append(sum(density[startPoints[x]:stopPoints[x]])/len(density[startPoints[x]:stopPoints[x]]))
+        tempVdw.append(sum(vdw[startPoints[x]:stopPoints[x]])/len(vdw[startPoints[x]:stopPoints[x]]))
+        tempCoulomb.append(sum(coulomb[startPoints[x]:stopPoints[x]])/len(coulomb[startPoints[x]:stopPoints[x]]))
+        tempStretch.append(sum(stretch[startPoints[x]:stopPoints[x]])/len(stretch[startPoints[x]:stopPoints[x]]))
+        tempBend.append(sum(bend[startPoints[x]:stopPoints[x]])/len(bend[startPoints[x]:stopPoints[x]]))
+        tempTorsion.append(sum(torsion[startPoints[x]:stopPoints[x]])/len(torsion[startPoints[x]:stopPoints[x]]))
+    #print('{0}\n\n{1}\n\n{2}\n\n{3}\n\n{4}\n\n{5}\n'.format(tempDensity,tempVdw,tempCoulomb,tempStretch,tempBend,tempTorsion))
+    #Calculate the block number means, append these to the permanent lists
+    blockDensityMean.append(sum(tempDensity[:])/len(tempDensity[:]))
+    blockVdwMean.append(sum(tempVdw[:])/len(tempDensity[:]))
+    blockCoulombMean.append(sum(tempCoulomb[:])/len(tempCoulomb[:]))
+    blockStretchMean.append(sum(tempStretch[:])/len(tempStretch[:]))
+    blockBendMean.append(sum(tempBend[:])/len(tempBend[:]))
+    blockTorsionMean.append(sum(tempTorsion[:])/len(tempTorsion[:]))
+    #calculate standard deviations
+    for x in tempDensity:
+        tempA.append(m.pow(x-blockDensityMean[-1],2))
+    blockDensityStd.append(m.sqrt(sum(tempA)/(value*(value - 1))))
+    for x in tempVdw:
+        tempB.append(m.pow(x-blockVdwMean[-1],2))
+    blockVdwStd.append(m.sqrt(sum(tempB)/(value*(value - 1))))
+    for x in tempCoulomb:
+        tempC.append(m.pow(x-blockCoulombMean[-1],2))
+    blockCoulombStd.append(m.sqrt(sum(tempC)/(value*(value - 1))))
+    for x in tempStretch:
+        tempD.append(m.pow(x-blockStretchMean[-1],2))
+    blockStretchStd.append(m.sqrt(sum(tempD)/(value*(value - 1))))
+    for x in tempBend:
+        tempE.append(m.pow(x-blockBendMean[-1],2))
+    blockBendStd.append(m.sqrt(sum(tempE)/(value*(value - 1))))
+    for x in tempTorsion:
+        tempF.append(m.pow(x-blockTorsionMean[-1],2))
+    blockTorsionStd.append(m.sqrt(sum(tempF)/(value*(value - 1))))
+    blockSize.append(linesPerBlock)
+print('\nAvailable data values per block are:\n{0}'.format(blockSize))
+#print('{0}'.format(blockDensityStd))
+#plot the standard deviation of the density as a function of number of blocks
+plt.figure()
+plt.xlabel('Data Values Per Block')
+plt.ylabel('Standard Deviation of Density (kg/m^3)')
+plt.plot(blockSize,blockDensityStd,'ok-')
+plt.draw()
+plt.show(block=False)
 
-
+controlFlag = 0
+while controlFlag != 1:
+    rawBlockLineNumber = raw_input('\nHow many data values per block are necessary? Please choose using the printed values and the chart.\n')
+    try:
+        if isinstance(int(rawBlockLineNumber), int):
+            #find index corresponding to this.
+            blockIndex = blockSize.index(int(rawBlockLineNumber))
+            print('\nYou have selected {0} blocks.\n'.format(blocksToTest[blockIndex]))
+            controlFlag = 1
+        else:
+            print('\nYour input did not match an appropriate form, please try again.\n')
+    except:
+        print('\nAn error has occured in block selection.\n')
+#write the data to the output file
+outputFile = open('BlockedData','w')
+outputFile.write('Number of blocks: {0}\n'.format(blocksToTest[blockIndex]))
+outputFile.write('Lines per block: {0}\n'.format(blockSize[blockIndex]))
+outputFile.write('\nBlocked Simulation Data:\n')
+outputFile.write('Property:\t Sample Mean:\tSample standard deviation\n')
+outputFile.write('Density:\t{0:.2f} kg/m^3\t\t{0:.2f} kg/m^3\n'.format(blockDensityMean[blockIndex],blockDensityStd[blockIndex]))
+outputFile.write('van der Waals:\t{0:.2f} kcal/mol\t{0:.2f} kcal/mol\n'.format(blockVdwMean[blockIndex],blockVdwStd[blockIndex]))
+outputFile.write('Electrostatic:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockCoulombMean[blockIndex],blockCoulombStd[blockIndex]))
+outputFile.write('Stretch:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockStretchMean[blockIndex],blockStretchStd[blockIndex]))
+outputFile.write('Bend:\t\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockBendMean[blockIndex],blockBendStd[blockIndex]))
+outputFile.write('Torsion:\t{0:.2f} kcal/mol\t\t{0:.2f} kcal/mol\n'.format(blockTorsionMean[blockIndex],blockTorsionStd[blockIndex]))
