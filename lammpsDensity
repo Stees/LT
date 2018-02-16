@@ -15,7 +15,6 @@ startFlag = False
 stopFlag = False
 lineNumber = 0
 printEveryList = []
-blocksToConsider = range(2,10000)
 blocksToTest = []
 blockSize = []
 blockDensityMean = []
@@ -119,8 +118,9 @@ while controlFlag != 1:
             print('Invalid entry. Try again.\n')
     except:
         print('Error in equilibration region start input.\n')
-#number of steps in equilibration range
+#number of steps in equilibration range, set possible region of blocks to test
 equilibrationLines = lineNumber - equilibrationStart
+blocksToConsider = range(2,equilibrationLines)
 #print('{0}'.format(equilibrationLines))
 for value in blocksToConsider:
     if equilibrationLines%value == 0:
@@ -132,7 +132,7 @@ for value in blocksToTest:
     tempPoints = startPoints[1:]
     stopPoints = [x-1 for x in startPoints[1:]]+[lineNumber]
     #print('{0}'.format(lineNumber))
-    #print('{0}\n{1}\n{2}\n'.format(startPoints,tempPoints,stopPoints))
+    #print('{0}\n\n{1}\n\n{2}\n'.format(startPoints,tempPoints,stopPoints))
     #calculate mean properties for each block. Mean density will be used to determine appropriate number of blocks
     tempDensity = []
     tempVdw = []
@@ -147,12 +147,16 @@ for value in blocksToTest:
     tempE = []
     tempF = []
     for x in range(0,len(startPoints)):
-        tempDensity.append(sum(density[startPoints[x]:stopPoints[x]])/len(density[startPoints[x]:stopPoints[x]]))
-        tempVdw.append(sum(vdw[startPoints[x]:stopPoints[x]])/len(vdw[startPoints[x]:stopPoints[x]]))
-        tempCoulomb.append(sum(coulomb[startPoints[x]:stopPoints[x]])/len(coulomb[startPoints[x]:stopPoints[x]]))
-        tempStretch.append(sum(stretch[startPoints[x]:stopPoints[x]])/len(stretch[startPoints[x]:stopPoints[x]]))
-        tempBend.append(sum(bend[startPoints[x]:stopPoints[x]])/len(bend[startPoints[x]:stopPoints[x]]))
-        tempTorsion.append(sum(torsion[startPoints[x]:stopPoints[x]])/len(torsion[startPoints[x]:stopPoints[x]]))
+        try:
+            tempDensity.append(sum(density[startPoints[x]:stopPoints[x]])/len(density[startPoints[x]:stopPoints[x]]))
+            tempVdw.append(sum(vdw[startPoints[x]:stopPoints[x]])/len(vdw[startPoints[x]:stopPoints[x]]))
+            tempCoulomb.append(sum(coulomb[startPoints[x]:stopPoints[x]])/len(coulomb[startPoints[x]:stopPoints[x]]))
+            tempStretch.append(sum(stretch[startPoints[x]:stopPoints[x]])/len(stretch[startPoints[x]:stopPoints[x]]))
+            tempBend.append(sum(bend[startPoints[x]:stopPoints[x]])/len(bend[startPoints[x]:stopPoints[x]]))
+            tempTorsion.append(sum(torsion[startPoints[x]:stopPoints[x]])/len(torsion[startPoints[x]:stopPoints[x]]))
+        except:
+            print('Something went wrong when x = {0}.\nStart points: {1}\nStop points: {2}\n'.format(x,startPoints[x],stopPoints[x]))
+            quit()
     #print('{0}\n\n{1}\n\n{2}\n\n{3}\n\n{4}\n\n{5}\n'.format(tempDensity,tempVdw,tempCoulomb,tempStretch,tempBend,tempTorsion))
     #Calculate the block number means, append these to the permanent lists
     blockDensityMean.append(sum(tempDensity[:])/len(tempDensity[:]))
@@ -190,7 +194,6 @@ plt.ylabel('Standard Deviation of Density (kg/m^3)')
 plt.plot(blockSize,blockDensityStd,'ok-')
 plt.draw()
 plt.show(block=False)
-
 controlFlag = 0
 while controlFlag != 1:
     rawBlockLineNumber = raw_input('\nHow many data values per block are necessary? Please choose using the printed values and the chart.\n')
