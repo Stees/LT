@@ -4,8 +4,6 @@
 import subprocess
 import matplotlib.pyplot as plt
 import math as m
-#enables interactive mode, will allow for continued program execution while plots are still displayed
-#plt.ion()
 
 #open data file, read lines, create start and stop flags, and make data arrays
 screenFile = open('screen.0','r')
@@ -62,9 +60,6 @@ for line in lines:
         bend.append(float(line.lstrip().split()[10]))
         torsion.append(float(line.lstrip().split()[11]))
         density.append(float(line.lstrip().split()[4])*1000)
-        # if timestep[-1] > 100000*gotTimestep:
-        #     avg.append(sum(density[-4000:])/4000)
-        #     aTimestep.append(timestep[-1])
         lineNumber = lineNumber + 1
     elif startFlag == True and stopFlag == True:
         trash = line
@@ -87,22 +82,10 @@ while controlFlag != 1:
 desLine = []
 for b in timestep:
     desLine.append(experimentalDensity)
-#print calculated averages
-# try:
-#     print('Average density:\t{0:.2f} kg/m^3\n'.format(avg[-1]))
-# except:
-#     print('No average density yet.\n')
-# print('Average LJ:\t\t{0:.2f} kcal/mol\n'.format(sum(vdw[-5000:])/5000))
-# print('Average electrostatic:\t{0:.2f} kcal/mol\n'.format(sum(coulomb[-5000:])/5000))
-# print('Average stretch:\t{0:.2f} kcal/mol\n'.format(sum(stretch[-5000:])/5000))
-# print('Average bend:\t\t{0:.2f} kcal/mol\n'.format(sum(bend[-5000:])/5000))
-# print('Average torsion:\t{0:.2f} kcal/mol\n'.format(sum(torsion[-5000:])/5000))
 plt.plot(timestep,density,color='m')
 plt.xlabel('Time (fs)')
 plt.ylabel('Density (kg/m^3)')
-#plt.plot(aTimestep,avg,color='b')
 plt.plot(timestep,desLine,color='c')
-#plt.legend(['Raw','Running average','Experimental'], loc=4, frameon=False)
 plt.legend(['Raw','Experimental'], loc=4, frameon=False)
 plt.draw()
 plt.show(block=False)
@@ -120,8 +103,7 @@ while controlFlag != 1:
         print('Error in equilibration region start input.\n')
 #number of steps in equilibration range, set possible region of blocks to test
 equilibrationLines = lineNumber - equilibrationStart
-blocksToConsider = range(2,equilibrationLines)
-#print('{0}'.format(equilibrationLines))
+blocksToConsider = range(2,int(equilibrationLines/2))
 for value in blocksToConsider:
     if equilibrationLines%value == 0:
         blocksToTest.append(value)
@@ -131,8 +113,6 @@ for value in blocksToTest:
     startPoints = range(equilibrationStart,lineNumber,linesPerBlock)
     tempPoints = startPoints[1:]
     stopPoints = [x-1 for x in startPoints[1:]]+[lineNumber]
-    #print('{0}'.format(lineNumber))
-    #print('{0}\n\n{1}\n\n{2}\n'.format(startPoints,tempPoints,stopPoints))
     #calculate mean properties for each block. Mean density will be used to determine appropriate number of blocks
     tempDensity = []
     tempVdw = []
@@ -157,7 +137,6 @@ for value in blocksToTest:
         except:
             print('Something went wrong when x = {0}.\nStart points: {1}\nStop points: {2}\n'.format(x,startPoints[x],stopPoints[x]))
             quit()
-    #print('{0}\n\n{1}\n\n{2}\n\n{3}\n\n{4}\n\n{5}\n'.format(tempDensity,tempVdw,tempCoulomb,tempStretch,tempBend,tempTorsion))
     #Calculate the block number means, append these to the permanent lists
     blockDensityMean.append(sum(tempDensity[:])/len(tempDensity[:]))
     blockVdwMean.append(sum(tempVdw[:])/len(tempDensity[:]))
@@ -167,31 +146,30 @@ for value in blocksToTest:
     blockTorsionMean.append(sum(tempTorsion[:])/len(tempTorsion[:]))
     #calculate standard deviations
     for x in tempDensity:
-        tempA.append(m.pow(x-blockDensityMean[-1],2))
-    blockDensityStd.append(m.sqrt(sum(tempA)/(value*(value - 1))))
+        tempA.append(m.pow(x,2)-m.pow(blockDensityMean[-1],2))
+    blockDensityStd.append(m.sqrt(sum(tempA)/(value - 1)))
     for x in tempVdw:
         tempB.append(m.pow(x-blockVdwMean[-1],2))
-    blockVdwStd.append(m.sqrt(sum(tempB)/(value*(value - 1))))
+    blockVdwStd.append(m.sqrt(sum(tempB)/(value - 1)))
     for x in tempCoulomb:
         tempC.append(m.pow(x-blockCoulombMean[-1],2))
-    blockCoulombStd.append(m.sqrt(sum(tempC)/(value*(value - 1))))
+    blockCoulombStd.append(m.sqrt(sum(tempC)/(value - 1)))
     for x in tempStretch:
         tempD.append(m.pow(x-blockStretchMean[-1],2))
-    blockStretchStd.append(m.sqrt(sum(tempD)/(value*(value - 1))))
+    blockStretchStd.append(m.sqrt(sum(tempD)/(value - 1)))
     for x in tempBend:
         tempE.append(m.pow(x-blockBendMean[-1],2))
-    blockBendStd.append(m.sqrt(sum(tempE)/(value*(value - 1))))
+    blockBendStd.append(m.sqrt(sum(tempE)/(value - 1)))
     for x in tempTorsion:
         tempF.append(m.pow(x-blockTorsionMean[-1],2))
-    blockTorsionStd.append(m.sqrt(sum(tempF)/(value*(value - 1))))
+    blockTorsionStd.append(m.sqrt(sum(tempF)/(value - 1)))
     blockSize.append(linesPerBlock)
 print('\nAvailable data values per block are:\n{0}'.format(blockSize))
-#print('{0}'.format(blockDensityStd))
 #plot the standard deviation of the density as a function of number of blocks
 plt.figure()
 plt.xlabel('Data Values Per Block')
 plt.ylabel('Standard Deviation of Density (kg/m^3)')
-plt.plot(blockSize,blockDensityStd,'ok-')
+plt.plot(blockSize,list(reversed(blockDensityStd)),'ok-')
 plt.draw()
 plt.show(block=False)
 controlFlag = 0
