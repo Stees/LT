@@ -178,7 +178,9 @@ while controlFlag != 1:
     try:
         if isinstance(int(rawBlockLineNumber), int):
             #find index corresponding to this.
-            blockIndex = blockSize.index(int(rawBlockLineNumber))
+            
+            blockIndex = len(blockSize) - blockSize.index(int(rawBlockLineNumber))
+            print('{0}'.format(blockIndex))
             print('\nYou have selected {0} blocks.\n'.format(blocksToTest[blockIndex]))
             controlFlag = 1
         else:
@@ -187,8 +189,8 @@ while controlFlag != 1:
         print('\nAn error has occured in block selection.\n')
 #write the data to the output file
 outputFile = open('BlockedData','w')
-outputFile.write('Number of blocks: {0}\n'.format(blocksToTest[blockIndex]))
-outputFile.write('Lines per block: {0}\n'.format(blockSize[blockIndex]))
+outputFile.write('Number of blocks: {0}\n'.format(blocksToTest[len(blocksToTest) - blockIndex]))
+outputFile.write('Lines per block: {0}\n'.format(blockSize[len(blockSize) - blockIndex]))
 outputFile.write('\nBlocked Simulation Data:\n')
 outputFile.write('Property:\t Sample Mean:\tSample standard deviation\n')
 outputFile.write('Density\t\t{0:.2f} kg/m^3\t\t{1:.2f} kg/m^3\n'.format(blockDensityMean[blockIndex],blockDensityStd[blockIndex]))
@@ -199,8 +201,8 @@ outputFile.write('Bend\t\t{0:.2f} kcal/mol\t\t{1:.2f} kcal/mol\n'.format(blockBe
 outputFile.write('Torsion\t\t{0:.2f} kcal/mol\t\t{1:.2f} kcal/mol\n'.format(blockTorsionMean[blockIndex],blockTorsionStd[blockIndex]))
 outputFile.close()
 #write data to the screen
-print('\n\nNumber of blocks: {0}'.format(blocksToTest[blockIndex]))
-print('Lines per block: {0}'.format(blockSize[blockIndex]))
+print('\n\nNumber of blocks: {0}'.format(blocksToTest[len(blocksToTest) - blockIndex]))
+print('Lines per block: {0}'.format(blockSize[len(blockSize) - blockIndex]))
 print('\nBlocked Simulation Data:')
 print('Property:\t Sample Mean:\tSample standard deviation')
 print('Density\t\t{0:.2f} kg/m^3\t\t{1:.2f} kg/m^3'.format(blockDensityMean[blockIndex],blockDensityStd[blockIndex]))
