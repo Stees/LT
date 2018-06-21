@@ -1,5 +1,7 @@
 #! /usr/bin/env python
-#assists user in determining block average properties resulting from a simulation by first helping the user determine the correct number of blocks to use. 
+#assists user in determining block average properties resulting from a simulation by first helping the user determine the correct number of blocks to use.
+
+#NOTE: In current form, only the mean density is a weighted mean. The other properties still need to be converted.
 
 import subprocess
 import matplotlib.pyplot as plt
@@ -35,6 +37,7 @@ coulomb = []
 stretch = []
 bend = []
 torsion = []
+blockStandardDeviation = []
 avg = []
 #get timestep from screen.0 output file. This line may need to be changed based on lammps configuration: where the output is written.
 getTimestep = subprocess.Popen('grep -m 1 "Time step" screen.0\n', stdout=subprocess.PIPE, shell=True)
@@ -115,6 +118,7 @@ for value in blocksToTest:
     stopPoints = [x-1 for x in startPoints[1:]]+[lineNumber]
     #calculate mean properties for each block. Mean density will be used to determine appropriate number of blocks
     tempDensity = []
+    tempDensity2 = []
     tempVdw = []
     tempCoulomb = []
     tempStretch = []
@@ -126,6 +130,9 @@ for value in blocksToTest:
     tempD = []
     tempE = []
     tempF = []
+    individualBlockVariance= []
+    runningBlockVariance = []
+    inverseBlockVariance =[]
     for x in range(0,len(startPoints)):
         try:
             tempDensity.append(sum(density[startPoints[x]:stopPoints[x]])/len(density[startPoints[x]:stopPoints[x]]))
@@ -137,16 +144,28 @@ for value in blocksToTest:
         except:
             print('Something went wrong when x = {0}.\nStart points: {1}\nStop points: {2}\n'.format(x,startPoints[x],stopPoints[x]))
             quit()
-    #Calculate the block number means, append these to the permanent lists
-    blockDensityMean.append(sum(tempDensity[:])/len(tempDensity[:]))
+    #Calculate the standard deviation of each block.
+    for point in range(0,len(startPoints)):
+        for j in density[startPoints[point]:stopPoints[point]]:
+            runningBlockVariance.append(m.pow(j-tempDensity[point],2))
+        individualBlockVariance.append(sum(runningBlockVariance)/(linesPerBlock-1))
+    for item in individualBlockVariance:
+        inverseBlockVariance.append(1/item)
+    #Calculate sum of inverse variance to use in weighting factor
+    inverseVarianceSum = sum(inverseBlockVariance)
+    #multiply each element of tempDensity by the weight of each block
+    for j, item in enumerate(tempDensity):
+        tempDensity2.append(item*inverseBlockVariance[j]/inverseVarianceSum)
+    #Calculate the block number means, append these to the permanent lists. This is where the weighting factor must be applied to the mean
+    blockDensityMean.append(sum(tempDensity2[:]))
     blockVdwMean.append(sum(tempVdw[:])/len(tempDensity[:]))
     blockCoulombMean.append(sum(tempCoulomb[:])/len(tempCoulomb[:]))
     blockStretchMean.append(sum(tempStretch[:])/len(tempStretch[:]))
     blockBendMean.append(sum(tempBend[:])/len(tempBend[:]))
     blockTorsionMean.append(sum(tempTorsion[:])/len(tempTorsion[:]))
-    #calculate standard deviations
+    #calculate standard deviations of the block means
     for x in tempDensity:
-        tempA.append(m.pow(x,2)-m.pow(blockDensityMean[-1],2))
+        tempA.append(m.pow(x-blockDensityMean[-1],2))
     blockDensityStd.append(m.sqrt(sum(tempA)/(value - 1)))
     for x in tempVdw:
         tempB.append(m.pow(x-blockVdwMean[-1],2))
@@ -187,7 +206,10 @@ while controlFlag != 1:
             print('\nYour input did not match an appropriate form, please try again.\n')
     except:
         print('\nAn error has occured in block selection.\n')
+#calculate the standard deviation of each block.
+
 #write the data to the output file
+
 outputFile = open('BlockedData','w')
 outputFile.write('Number of blocks: {0}\n'.format(blocksToTest[len(blocksToTest) - blockIndex]))
 outputFile.write('Lines per block: {0}\n'.format(blockSize[len(blockSize) - blockIndex]))
